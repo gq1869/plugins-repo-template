@@ -8,10 +8,9 @@
 # <plugin_id>.zip
 # Each zip file contains the plugin.yml file and any other files in the same directory
 
-outdir="$1"
-if [ -z "$outdir" ]; then
-    outdir="_site"
-fi
+set -euo pipefail
+
+outdir="${1:-_site}"
 
 rm -rf "$outdir"
 mkdir -p "$outdir"
@@ -37,11 +36,11 @@ buildPlugin()
     zip -r "$zipfile" . > /dev/null
     popd > /dev/null
 
-    name=$(grep "^name:" "$f" | head -n 1 | cut -d' ' -f2- | sed -e 's/\r//' -e 's/^"\(.*\)"$/\1/')
-    description=$(grep "^description:" "$f" | head -n 1 | cut -d' ' -f2- | sed -e 's/\r//' -e 's/^"\(.*\)"$/\1/')
-    ymlVersion=$(grep "^version:" "$f" | head -n 1 | cut -d' ' -f2- | sed -e 's/\r//' -e 's/^"\(.*\)"$/\1/')
+    name=$(grep -m1 "^name:" "$f" | cut -d' ' -f2- | sed -e 's/\r//' -e 's/^"\(.*\)"$/\1/' || true)
+    description=$(grep -m1 "^description:" "$f" | cut -d' ' -f2- | sed -e 's/\r//' -e 's/^"\(.*\)"$/\1/' || true)
+    ymlVersion=$(grep -m1 "^version:" "$f" | cut -d' ' -f2- | sed -e 's/\r//' -e 's/^"\(.*\)"$/\1/' || true)
     version="$ymlVersion-$version"
-    IFS=$'\n' dep=$(grep "^# requires:" "$f" | cut -c 12- | sed -e 's/\r//')
+    IFS=$'\n' dep=$(grep "^# requires:" "$f" | cut -c 12- | sed -e 's/\r//' || true)
 
     # write to spec index
     echo "- id: $plugin_id
@@ -64,6 +63,8 @@ buildPlugin()
     echo "" >> "$outdir"/index.yml
 }
 
-find ./plugins -mindepth 1 -name *.yml | while read file; do
+find ./plugins -mindepth 1 -name '*.yml' | while read -r file; do
     buildPlugin "$file"
 done
+
+[ -s "$outdir/index.yml" ] || echo "[]" > "$outdir/index.yml"
