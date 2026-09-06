@@ -40,7 +40,11 @@ buildPlugin()
     description=$(grep -m1 "^description:" "$f" | cut -d' ' -f2- | sed -e 's/\r//' -e 's/^"\(.*\)"$/\1/' || true)
     ymlVersion=$(grep -m1 "^version:" "$f" | cut -d' ' -f2- | sed -e 's/\r//' -e 's/^"\(.*\)"$/\1/' || true)
     version="$ymlVersion-$version"
-    IFS=$'\n' dep=$(grep "^# requires:" "$f" | cut -c 12- | sed -e 's/\r//' || true)
+    # Plugin ids may contain spaces (see stashapp/stash#6628), so each
+    # "# requires:" line is treated as exactly one id: IFS is scoped to
+    # this function so word splitting on space doesn't break those ids.
+    local IFS=$'\n'
+    dep=$(grep "^# requires:" "$f" | cut -c 12- | sed -e 's/\r//' || true)
 
     # write to spec index
     echo "- id: $plugin_id
@@ -55,7 +59,7 @@ buildPlugin()
     # handle dependencies
     if [ ! -z "$dep" ]; then
         echo "  requires:" >> "$outdir"/index.yml
-        for d in ${dep//,/ }; do
+        for d in ${dep//,/$'\n'}; do
             echo "    - $d" >> "$outdir"/index.yml
         done
     fi
@@ -63,7 +67,7 @@ buildPlugin()
     echo "" >> "$outdir"/index.yml
 }
 
-find ./plugins -mindepth 1 -name '*.yml' | while read -r file; do
+find ./plugins -mindepth 1 -name '*.yml' | while IFS= read -r file; do
     buildPlugin "$file"
 done
 
