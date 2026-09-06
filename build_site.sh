@@ -8,9 +8,14 @@
 # <plugin_id>.zip
 # Each zip file contains the plugin.yml file and any other files in the same directory
 
-outdir="$1"
-if [ -z "$outdir" ]; then
-    outdir="_site"
+set -eu
+
+outdir="${1:-_site}"
+
+# fail loudly instead of silently publishing an empty/partial index
+if [ -z "$(find ./plugins -mindepth 2 -maxdepth 2 -name '*.yml' -print -quit)" ]; then
+    echo "error: no plugin .yml files found under ./plugins" >&2
+    exit 1
 fi
 
 rm -rf "$outdir"
