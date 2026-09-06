@@ -1,0 +1,4 @@
+name: Example Plugin
+description: Placeholder plugin showing the expected layout for this source index — plugins/<directory>/<id>.yml, where the yml's filename (not the directory name) becomes the published plugin id. Replace this directory with your own plugin, or delete it.
+version: 0.1.0
+url: https://github.com/gq1869/plugins-repo-template
