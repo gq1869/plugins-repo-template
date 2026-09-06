@@ -1,0 +1,4 @@
+name: demo - all
+description: Demo plugin exercising multi-value, space-containing # requires: ids
+version: 1.0
+# requires: demo - assets,demo - brand
