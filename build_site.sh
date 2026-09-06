@@ -32,7 +32,8 @@ buildPlugin()
     # create the zip file
     # copy other files
     zipfile=$(realpath "$outdir/$plugin_id.zip")
-    
+    rm -f "$zipfile"
+
     pushd "$dir" > /dev/null
     zip -r "$zipfile" . > /dev/null
     popd > /dev/null
@@ -64,6 +65,16 @@ buildPlugin()
     echo "" >> "$outdir"/index.yml
 }
 
-find ./plugins -mindepth 1 -name *.yml | while read file; do
+# restrict to the plugins/<dir>/<id>.yml shape: this excludes ymls nested
+# deeper (vendored deps, i18n files) and ymls sitting directly in plugins/
+# (which would otherwise zip the entire plugins/ tree as one "plugin")
+dupes=$(find ./plugins -mindepth 2 -maxdepth 2 -name '*.yml' -print0 \
+        | xargs -0 -r -n1 basename | sed 's/\.yml$//' | sort | uniq -d)
+if [ -n "$dupes" ]; then
+    echo "error: duplicate plugin ids (same yml filename in different directories): $dupes" >&2
+    exit 1
+fi
+
+while IFS= read -r -d '' file; do
     buildPlugin "$file"
-done
+done < <(find ./plugins -mindepth 2 -maxdepth 2 -name '*.yml' -print0)
